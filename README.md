@@ -3,8 +3,8 @@
 1)  Objective
 The following example illustrates how Spark can be deployed to transform data between formats and independent sources and/or targets. Specifically: 
 
-Extract existing relational data (a PostgreSQL-compatible database is demonstrated in this example), transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by ChaosSeach 
-Read parquet formatted data files from an S3 bucket, transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by ChaosSeach
+Extract existing relational data (a PostgreSQL-compatible database is demonstrated in this example), transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by XXX 
+Read parquet formatted data files from an S3 bucket, transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by XXX
 
 Scala notebooks only are presented.
 2)  System Configuration
@@ -153,14 +153,14 @@ val AccessKey = dbutils.secrets.get(scope = "aws", key = "aws-access-key")
 // Encode the Secret Key as that can contain "/"
 val SecretKey = dbutils.secrets.get(scope = "aws", key = "aws-secret-key")
 val EncodedSecretKey = SecretKey.replace("/", "%2F")
-val AwsBucketName = "jj-chaos"
-val MountName = "s3-jj-chaos"
+val AwsBucketName = "jj-bucket"
+val MountName = "s3-jj-bucket"
 
 dbutils.fs.mount(s"s3a://$AccessKey:$EncodedSecretKey@$AwsBucketName", s"/mnt/$MountName")
 display(dbutils.fs.ls(s"/mnt/$MountName"))
 ```
 Results:
-![databricks-token-i4](https://user-images.githubusercontent.com/12547186/156044730-91799b7a-5175-4946-ad88-5bf07111f58c.png)
+File List here
 The mount will remain in-scope for the lifetime of the workspace (until deleted).
 
 5)  Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
@@ -200,11 +200,11 @@ val jdbcDF = spark.read
 jdbcDF.printSchema
 jdbcDF.show(10)
 
-jdbcDF.coalesce(1).write.format("parquet").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/parquet")
+jdbcDF.coalesce(1).write.format("parquet").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/parquet")
 
-jdbcDF.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/json")
+jdbcDF.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/json")
 
-jdbcDF.coalesce(1).write.option("header", "true").format("csv").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/csv")
+jdbcDF.coalesce(1).write.option("header", "true").format("csv").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/csv")
 ```
 
 (4) Spark Jobs
@@ -237,25 +237,18 @@ only showing top 10 rows
 
 jdbcDF: org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
 
-
 Files can also be compressed with:
+  ```scala
 .option("compression","gzip")
-
+  ```
 
 For example:
+  ```scala
 jdbcDF.coalesce(1).write.option("compression","gzip")
-.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/json")
-
-
-
-
-
-
+.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/json")
+```
 
 Inspect the target files in S3:
- 
-
-
 
 Transformed results are written to the specified folder which will contain multiple files including: multiple CRC files, a _SUCCESS file, and the desired target file(s). As a multi-partition system, Spark will write the desired target files as a file per partition resulting in multiple parquet, JSON, or CSV files (along with the multiple CRC files and _SUCCESS files). The coalesce(1) function shown above will merge all partitions into a single partition and write a single file (whereas coalesce(4) would denote four partitions/files, for example). Use caution when using coalesce() with larger datasets -- all work is transferred to a single worker which may cause OutOfMemory exceptions. 
 
@@ -269,11 +262,12 @@ In general, one can determine the number of partitions by multiplying the number
 1)  Use Spark to read the Parquet source source file from the mounted S3 bucket, then write the JSON formatted transform back to the mounted S3 bucket
 
 Scala Notebook:
-val df = spark.read.parquet("dbfs:/mnt/s3-jj-chaos/weblogs.parquet")
+  ```scala
+val df = spark.read.parquet("dbfs:/mnt/s3-jj-bucket/weblogs.parquet")
 df.printSchema
 df.show(10)
-df.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/parquet2json")
-
+df.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/parquet2json")
+```
 
 Results:
 (3) Spark Jobs
@@ -303,11 +297,7 @@ only showing top 10 rows
 
 df: org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
 
-
-
 2)  Review JSON formatted transform
-
-
 
 From file:
 
