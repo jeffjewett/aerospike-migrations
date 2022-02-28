@@ -31,14 +31,14 @@ To make the certificates compatible with Java in Databricks, the client certific
 1)  Client certificate (client_cert.crt):
 
 bash:
-```
+```bash
 openssl x509 -in client_cert.crt -out client_cert.crt.der -outform der
 ```
 
 2)  Client key files (key_file.key):
 
 bash:
-```
+```bash
 openssl pkcs8 -topk8 -outform der -in key_file.key -out key_file.key.pk8 -nocrypt
 ```
 
@@ -47,7 +47,7 @@ openssl pkcs8 -topk8 -outform der -in key_file.key -out key_file.key.pk8 -nocryp
 4)  Install databricks-cli (if not installed):
 
 bash:
-```
+```bash
 pip install databricks-cli
 ```
 
@@ -60,7 +60,7 @@ root.crt
 6)  In the Databricks Scala notebook, set the following JDBC Driver options in either of the following ways:
 
 Scala Notebook:
-```
+```scala
 val jdbcDF = spark.read
   .format("jdbc")
   .option("url", "jdbc:postgresql://<ip or qualified url>:5433/<database>") 
@@ -75,7 +75,7 @@ val jdbcDF = spark.read
 or
 
 Scala Notebook:
-```
+```scala
 val jdbcDF = spark.read
   .format("jdbc")
   .option("url", "jdbc:postgresql://<ip or qualified url>:5433/<database>") 
@@ -129,7 +129,7 @@ Copy the token presented as it will no longer be visible/retrievable once Done i
 3)  Create a Databricks Secrets Scope for AWS credentials
 
 bash:
-```
+```bash
 databricks configure --token
 <paste token>
 databricks secrets create-scope --scope aws
@@ -146,7 +146,7 @@ databricks secrets list --scope aws
 4) Mount the S3 bucket in Databricks
 
 Scala Notebook:
-```  
+```scala  
 val AccessKey = dbutils.secrets.get(scope = "aws", key = "aws-access-key")
 // Encode the Secret Key as that can contain "/"
 val SecretKey = dbutils.secrets.get(scope = "aws", key = "aws-secret-key")
@@ -176,17 +176,19 @@ IP,Time,URL,Status
 <Download weblog5k.csv here>
 
 SQL shell:
-# create database logs;
-# \c logs;
-# create schema server1;
-# set schema 'server1';
-# create table weblog(ip text, datetime timestamp, url text, status int);
-# \copy weblog from weblog5k.CSV with delimiter ',' CSV header
-
+```sql
+create database logs;
+\c logs;
+create schema server1;
+set schema 'server1';
+create table weblog(ip text, datetime timestamp, url text, status int);
+\copy weblog from weblog5k.CSV with delimiter ',' CSV header
+```
 
 2)  Use Spark to extract existing relational data, transform data to Parquet/JSON/CSV data, then write transformed data to the mounted S3 bucket
 
 Scala Notebook (SSL disabled):
+```scala
 val jdbcDF = spark.read
   .format("jdbc")
   .option("url", "jdbc:postgresql://aa.bbb.cc.ddd:5433/logs")
@@ -202,7 +204,7 @@ jdbcDF.coalesce(1).write.format("parquet").mode("overwrite").save("dbfs:/mnt/s3-
 jdbcDF.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/json")
 
 jdbcDF.coalesce(1).write.option("header", "true").format("csv").mode("overwrite").save("dbfs:/mnt/s3-jj-chaos/weblogs/csv")
-
+```
 
 (4) Spark Jobs
 jdbcDF:org.apache.spark.sql.DataFrame
