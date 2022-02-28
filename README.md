@@ -1,63 +1,72 @@
-# aerospike-migrations
+# Databricks and Apache Spark as an Independent and Uniform Data Migration Platform
 
-1)  Objective
-The following example illustrates how Spark can be deployed to transform data between formats and independent sources and/or targets. Specifically: 
+The following examples illustrate how Databricks and Spark can be deployed to migrate and/or transform data between formats, independent sources, and/or independent targets. 
 
-Extract existing relational data (a PostgreSQL-compatible database is demonstrated in this example), transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by XXX 
-Read parquet formatted data files from an S3 bucket, transform it to CSV or JSON formatted data, then push the transformed data to an S3 bucket for consumption by XXX
+Specifically in these examples: 
 
-Scala notebooks only are presented.
-2)  System Configuration
-Spark:
-Databricks Enterprise Edition:
-7.6 (includes Apache Spark 3.0.1, Scala 2.12)
-AWS, us-east-1d
-1 node - m5d.large
+- Read existing relational data directly from a PostgreSQL-compatible database into a Spark DataFrame, then write the DataFrame to an S3 bucket as Parquet, CSV or JSON formatted data.
+- Read Parquet formatted data files from an S3 bucket into a Spark DataFrame, then write the DataFrame to an S3 bucket as CSV or JSON formatted data.
+- Read existing relational data directly from a Snowflake database into a Spark DataFrame, perform column transformations, then write the DataFrame directly to an Aerospike database.
 
-PostgreSQL:
-Yugabyte Enterprise 2.7.0:
-GCP
-Three n1-standard-8 nodes
-Replication Factor: 3 (RF=3)
-1 zone (us-central1), and 3 availability zones (a, b, c)
-Encryption in-transit enabled
-OpenSSL version 2.8.3
+Other workflows can then be derived from the above examples, such as:
+- Read existing relational data directly from a PostgreSQL-compatible database into a Spark DataFrame, perform column transformations on the implied schema, then write the DataFrame directly to an Aerospike database.
+- Read existing relational data directly from a Snowflake database into a Spark DataFrame, write the DataFrame to an S3 bucket as Parquet, CSV or JSON formatted data, read the Parquet formatted data files from an S3 bucket into a Spark DataFrame, then write the DataFrame directly to an Aerospike database.
+- Derive Spark connectivity to other database platforms.
+
+Both Databricks and Apache Spark clusters are used in the examples. Scala notebooks/scripts only are presented.
+
+## System Configuration
+
+#### Spark:
+- Databricks Enterprise Edition:
+  - 7.6 (includes Apache Spark 3.0.1, Scala 2.12)
+- AWS, us-east-1d
+- 1 node - m5d.large
+
+#### PostgreSQL:
+- Yugabyte Enterprise 2.7.0:
+  - GCP
+  - Three n1-standard-8 nodes
+  - Replication Factor: 3 (RF=3)
+  - 1 zone (us-central1), and 3 availability zones (a, b, c)
+  - Encryption in-transit enabled
+  - OpenSSL version 2.8.3
 Note: Yugabyte access port is 5433 (vs well-known 5432)
-3)  SSL
+
+## SSL
 Encryption-in-transit (EIT)  is often enabled to secure the source database. This example also illustrates how to configure the client java JDBC PostgreSQL driver to access EIT-enabled sources. 
 
 To make the certificates compatible with Java in Databricks, the client certificate and key file must be converted to DER format:
 
-1)  Client certificate (client_cert.crt):
+#### (1) Client certificate (client_cert.crt):
 
 bash:
 ```bash
 openssl x509 -in client_cert.crt -out client_cert.crt.der -outform der
 ```
 
-2)  Client key files (key_file.key):
+#### (2) Client key files (key_file.key):
 
 bash:
 ```bash
 openssl pkcs8 -topk8 -outform der -in key_file.key -out key_file.key.pk8 -nocrypt
 ```
 
-3)  Note:  The root certificate does not need conversion (root.crt).
+#### (3) Note:  The root certificate does not need conversion (root.crt).
 
-4)  Install databricks-cli (if not installed):
+#### (4) Install databricks-cli (if not installed):
 
 bash:
 ```bash
 pip install databricks-cli
 ```
 
-5)  Create a certificate folder in Databricks DBFS and copy the following files to that folder (/dbfs/<path-to-certs>/) (refer to the Databricks documentation for details):
+#### (5) Create a certificate folder in Databricks DBFS and copy the following files to that folder (/dbfs/path-to-certs/) (refer to the [Databricks documentation](https://docs.databricks.com/data/databricks-file-system.html) for details):
+  - client_cert.crt.der
+  - key_file.key.pk8
+  - root.crt
 
-client_cert.crt.der
-key_file.key.pk8
-root.crt
-
-6)  In the Databricks Scala notebook, set the following JDBC Driver options in either of the following ways:
+#### (6) In the Databricks Scala notebook, set the following JDBC Driver options in either of the following ways:
 
 Scala Notebook:
 ```scala
@@ -87,9 +96,11 @@ val jdbcDF = spark.read
   .option("sslkey", "/dbfs/<path-to-certs>/key_file.key.pk8" )
 ```
 
-If SSL is enabled on the source database, substitute either of the above read statements for that shown in the Section 5 Scala Notebook, below.
-4)  Mount an S3 bucket in Databricks
-1)  Create an AWS S3 API User
+If SSL is enabled on the source database, substitute either of the above read statements for those shown in the Scala Notebooks, below.
+
+## Mount an S3 bucket in Databricks
+
+#### (1) Create an AWS S3 API User
 
 From AWS IAM console => Users
 ![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156036668-b57bfde2-298f-44de-ae27-b142b6210f57.png)
@@ -115,7 +126,7 @@ Access key ID and Secret access key must be added to a Databricks Secret Scope d
 ![aws-iam-i6](https://user-images.githubusercontent.com/12547186/156039446-fe7adfbb-fa5c-434d-8a12-8718ef062ef3.png)
 => `Close`
 
-2)  Create a Databricks Access Token
+#### (2) Create a Databricks Access Token
 
 From the workspace, select Settings => User Settings
 ![databricks-token-i1](https://user-images.githubusercontent.com/12547186/156044445-cffab914-7e6c-4912-a3dd-c8816bc5f908.png)
@@ -128,7 +139,7 @@ Copy the token presented as it will no longer be visible/retrievable once Done i
 ![databricks-token-i3](https://user-images.githubusercontent.com/12547186/156044666-702984a2-d0f7-41a5-aadd-f4b5169ccb40.png)
 => `Done`
 
-3)  Create a Databricks Secrets Scope for AWS credentials
+#### (3) Create a Databricks Secrets Scope for AWS credentials
 
 bash:
 ```bash
@@ -145,7 +156,7 @@ databricks secrets list --scope aws
 <view output>
 ```
 
-4) Mount the S3 bucket in Databricks
+#### (4) Mount the S3 bucket in Databricks
 
 Scala Notebook:
 ```scala  
@@ -160,21 +171,29 @@ dbutils.fs.mount(s"s3a://$AccessKey:$EncodedSecretKey@$AwsBucketName", s"/mnt/$M
 display(dbutils.fs.ls(s"/mnt/$MountName"))
 ```
 Results:
-File List here
+| | Path | Name | Size |
+| ---- | ---- | ---- | ---- |
+| 1 | dbfs:/mnt/s3-jj-bucket/coalesce-csv | coalesce-csv | 0 |
+  
+(note: subfolder 'coalesce-csv' created in AWS jj-bucket)
+  
 The mount will remain in-scope for the lifetime of the workspace (until deleted).
 
-5)  Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
-1)  Load Data
+## Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
+
+#### (1) Load Data
 
 Sample data (CSV):
+```csv  
 IP,Time,URL,Status
-10.128.2.1,29-Nov-2017 06:58:55,GET /login.php HTTP/1.1,200
-10.128.2.1,29-Nov-2017 06:59:02,POST /process.php HTTP/1.1,302
+10.128.2.1,29-Nov-2017 06:58:55,GET /login.php HTTP/1.1,200 
+10.128.2.1,29-Nov-2017 06:59:02,POST /process.php HTTP/1.1,302 
 10.128.2.1,29-Nov-2017 06:59:03,GET /home.php HTTP/1.1,200
-10.131.2.1,29-Nov-2017 06:59:04,GET /js/vendor/moment.min.js HTTP/1.1,200
-10.130.2.1,29-Nov-2017 06:59:06,GET /bootstrap-3.3.7/js/bootstrap.js HTTP/1.1,200
-
-<Download weblog5k.csv here>
+10.131.2.1,29-Nov-2017 06:59:04,GET /js/vendor/moment.min.js HTTP/1.1,200 
+10.130.2.1,29-Nov-2017 06:59:06,GET /bootstrap-3.3.7/js/bootstrap.js HTTP/1.1,200 
+```
+  
+[Download 'weblog.csv' sample data for this example here](https://www.kaggle.com/shawon10/web-log-dataset)
 
 SQL shell:
 ```sql
@@ -186,7 +205,7 @@ create table weblog(ip text, datetime timestamp, url text, status int);
 \copy weblog from weblog5k.CSV with delimiter ',' CSV header
 ```
 
-2)  Use Spark to extract existing relational data, transform data to Parquet/JSON/CSV data, then write transformed data to the mounted S3 bucket
+#### (2) Use Spark to extract existing relational data, transform data to Parquet/JSON/CSV data, then write transformed data to the mounted S3 bucket
 
 Scala Notebook (SSL disabled):
 ```scala
@@ -206,7 +225,8 @@ jdbcDF.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-
 
 jdbcDF.coalesce(1).write.option("header", "true").format("csv").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/csv")
 ```
-
+Output:
+```
 (4) Spark Jobs
 jdbcDF:org.apache.spark.sql.DataFrame
 ip:string
@@ -236,6 +256,7 @@ root
 only showing top 10 rows
 
 jdbcDF: org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
+```
 
 Files can also be compressed with:
   ```scala
