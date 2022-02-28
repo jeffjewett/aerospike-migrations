@@ -93,7 +93,7 @@ If SSL is enabled on the source database, substitute either of the above read st
 
 From AWS IAM console => Users
   
-  ![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156033705-544ec1bc-0f8f-4d0b-94fa-2ff9ff82fabd.png)
+![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156036668-b57bfde2-298f-44de-ae27-b142b6210f57.png)
 
 => Add users
 
