@@ -93,38 +93,40 @@ If SSL is enabled on the source database, substitute either of the above read st
 
 From AWS IAM console => Users
 ![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156036668-b57bfde2-298f-44de-ae27-b142b6210f57.png)
-=> Add users
+=> `Add users`
 
 Create username, Select AWS access type: check Access Key - Programmatic access
 ![aws-iam-i2](https://user-images.githubusercontent.com/12547186/156038965-7b307d36-be28-43dc-ab3e-2c5b3d98eaa9.png)
-=> Next Permissions
+=> `Next: Permissions`
 
 Select Attach existing policies directly => AmazonS3FullAccess
 ![aws-iam-i3](https://user-images.githubusercontent.com/12547186/156039008-2144afb1-0846-46fa-8f64-d59f37ef3fe8.png)
-=> Next: Tags
+=> `Next: Tags`
 
 Assign tags (for reference)
 ![aws-iam-i4](https://user-images.githubusercontent.com/12547186/156039272-2b9b76ef-33b1-49ed-976b-c68bf111e9ea.png)
-=> Next: Review
+=> `Next: Review`
   
 Finally...
 ![aws-iam-i5](https://user-images.githubusercontent.com/12547186/156039416-266575b3-d8eb-4fd1-8d60-b07e499cbee8.png)
-=> Create user
+=> `Create user`
 
 Access key ID and Secret access key must be added to a Databricks Secret Scope detailed in step 3), below. Copy and save...
 ![aws-iam-i6](https://user-images.githubusercontent.com/12547186/156039446-fe7adfbb-fa5c-434d-8a12-8718ef062ef3.png)
-=> Close
+=> `Close`
 
 2)  Create a Databricks Access Token
 
 From the workspace, select Settings => User Settings
+![databricks-token-i1](https://user-images.githubusercontent.com/12547186/156044445-cffab914-7e6c-4912-a3dd-c8816bc5f908.png)
 
+ From the User Setting Page, select the Access Tokens tab -> Generate New Token.  Enter a comment/name.
+![databricks-token-i2](https://user-images.githubusercontent.com/12547186/156044541-be34cc12-258f-49a0-882d-d414ffd96fe4.png)
+=> `Generate`
 
-From the User Setting Page, select the Access Tokens tab -> Generate New Token.  Enter a comment/name.
-
-=> Generate
 Copy the token presented as it will no longer be visible/retrievable once Done is selected.  This token will be required for CLI access, described below. Copy and save for later use.
-=> Done
+![databricks-token-i3](https://user-images.githubusercontent.com/12547186/156044666-702984a2-d0f7-41a5-aadd-f4b5169ccb40.png)
+=> `Done`
 
 3)  Create a Databricks Secrets Scope for AWS credentials
 
@@ -157,9 +159,8 @@ val MountName = "s3-jj-chaos"
 dbutils.fs.mount(s"s3a://$AccessKey:$EncodedSecretKey@$AwsBucketName", s"/mnt/$MountName")
 display(dbutils.fs.ls(s"/mnt/$MountName"))
 ```
-
 Results:
-
+![databricks-token-i4](https://user-images.githubusercontent.com/12547186/156044730-91799b7a-5175-4946-ad88-5bf07111f58c.png)
 The mount will remain in-scope for the lifetime of the workspace (until deleted).
 
 5)  Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
