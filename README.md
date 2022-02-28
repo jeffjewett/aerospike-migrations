@@ -92,37 +92,27 @@ If SSL is enabled on the source database, substitute either of the above read st
 1)  Create an AWS S3 API User
 
 From AWS IAM console => Users
-  
 ![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156036668-b57bfde2-298f-44de-ae27-b142b6210f57.png)
-
 => Add users
 
 Create username, Select AWS access type: check Access Key - Programmatic access
-
+![aws-iam-i2](https://user-images.githubusercontent.com/12547186/156038965-7b307d36-be28-43dc-ab3e-2c5b3d98eaa9.png)
 => Next Permissions
 
-
 Select Attach existing policies directly => AmazonS3FullAccess
-
+![aws-iam-i3](https://user-images.githubusercontent.com/12547186/156039008-2144afb1-0846-46fa-8f64-d59f37ef3fe8.png)
 => Next: Tags
 
 Assign tags (for reference)
-
+![aws-iam-i4](https://user-images.githubusercontent.com/12547186/156039272-2b9b76ef-33b1-49ed-976b-c68bf111e9ea.png)
 => Next: Review
-
-
-
-
-
-
-
-
-
-
+  
+Finally...
+![aws-iam-i5](https://user-images.githubusercontent.com/12547186/156039416-266575b3-d8eb-4fd1-8d60-b07e499cbee8.png)
 => Create user
 
 Access key ID and Secret access key must be added to a Databricks Secret Scope detailed in step 3), below. Copy and save...
-
+![aws-iam-i6](https://user-images.githubusercontent.com/12547186/156039446-fe7adfbb-fa5c-434d-8a12-8718ef062ef3.png)
 => Close
 
 2)  Create a Databricks Access Token
