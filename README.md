@@ -92,6 +92,8 @@ If SSL is enabled on the source database, substitute either of the above read st
 1)  Create an AWS S3 API User
 
 From AWS IAM console => Users
+  
+  ![aws-iam-i1](https://user-images.githubusercontent.com/12547186/156033705-544ec1bc-0f8f-4d0b-94fa-2ff9ff82fabd.png)
 
 => Add users
 
