@@ -17,11 +17,14 @@ Both Databricks and Apache Spark clusters are used in the examples. Scala notebo
 
 ## System Configuration
 
-#### Spark:
+#### Databricks:
 - Databricks Enterprise Edition:
   - 7.6 (includes Apache Spark 3.0.1, Scala 2.12)
-- AWS, us-east-1d
-- 1 node - m5d.large
+- AWS, us-west-2a
+- 1 node: m5d.large
+
+#### Apache Spark:
+- 3 nodes: 
 
 #### PostgreSQL:
 - Yugabyte Enterprise 2.7.0:
@@ -32,6 +35,10 @@ Both Databricks and Apache Spark clusters are used in the examples. Scala notebo
   - Encryption in-transit enabled
   - OpenSSL version 2.8.3
 Note: Yugabyte access port is 5433 (vs well-known 5432)
+
+#### Aerospike:
+- AWS, us-west-2a us-west-2b, us-west-2d
+- 3 nodes:
 
 ## SSL
 Encryption-in-transit (EIT)  is often enabled to secure the source database. This example also illustrates how to configure the client java JDBC PostgreSQL driver to access EIT-enabled sources. 
@@ -174,10 +181,11 @@ Results:
 | | Path | Name | Size |
 | ---- | ---- | ---- | ---- |
 | 1 | dbfs:/mnt/s3-jj-bucket/coalesce-csv | coalesce-csv | 0 |
+| 2 | dbfs:/mnt/s3-jj-bucket/weblogs | weblogs | 0 |
   
-(note: subfolder 'coalesce-csv' created in AWS jj-bucket)
+(note: subfolder 'coalesce-csv' and 'weblogs' created in AWS jj-bucket)
   
-The mount will remain in-scope for the lifetime of the workspace (until deleted).
+_The mount will remain in-scope for the lifetime of the workspace (until deleted)._
 
 ## Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
 
@@ -257,19 +265,21 @@ only showing top 10 rows
 
 jdbcDF: org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
 ```
-
 Files can also be compressed with:
   ```scala
 .option("compression","gzip")
   ```
-
 For example:
   ```scala
 jdbcDF.coalesce(1).write.option("compression","gzip")
 .format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/json")
 ```
 
-Inspect the target files in S3:
+#### (3) Inspect the target files in S3
+
+![s3-i1](https://user-images.githubusercontent.com/12547186/156080867-9441a1c8-a182-4046-bbf8-f74629b309de.png)
+![s3-i2](https://user-images.githubusercontent.com/12547186/156081340-106a85a3-ae61-45bb-b5ea-b9ef06d30c81.png)
+![s3-i3](https://user-images.githubusercontent.com/12547186/156081483-d6fe84d4-4a0d-446b-bffa-e40658b1efac.png)
 
 Transformed results are written to the specified folder which will contain multiple files including: multiple CRC files, a _SUCCESS file, and the desired target file(s). As a multi-partition system, Spark will write the desired target files as a file per partition resulting in multiple parquet, JSON, or CSV files (along with the multiple CRC files and _SUCCESS files). The coalesce(1) function shown above will merge all partitions into a single partition and write a single file (whereas coalesce(4) would denote four partitions/files, for example). Use caution when using coalesce() with larger datasets -- all work is transferred to a single worker which may cause OutOfMemory exceptions. 
 
@@ -277,10 +287,9 @@ repartition() is also an option that provides similar results. repartition() is 
 
 In general, one can determine the number of partitions by multiplying the number of CPUs in the cluster by 2, 3, or 4. When writing the data out to a file system, one can also choose a partition size that will create reasonable sized files (e.g. ~100MB). 
 
+## Read Parquet Formatted data files from the mounted S3 bucket, transform data to JSON formatted file, then write JSON formatted file back to the mounted S3 bucket
 
-6)  Read Parquet Formatted data files from the mounted S3 bucket, transform data to JSON formatted file, then write JSON formatted file back to the mounted S3 bucket
-
-1)  Use Spark to read the Parquet source source file from the mounted S3 bucket, then write the JSON formatted transform back to the mounted S3 bucket
+#### (1) Use Spark to read the Parquet source source file from the mounted S3 bucket, then write the JSON formatted transform back to the mounted S3 bucket
 
 Scala Notebook:
   ```scala
@@ -289,8 +298,8 @@ df.printSchema
 df.show(10)
 df.coalesce(1).write.format("json").mode("overwrite").save("dbfs:/mnt/s3-jj-bucket/weblogs/parquet2json")
 ```
-
-Results:
+Output:
+```
 (3) Spark Jobs
 df:org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
 
@@ -317,11 +326,12 @@ root
 only showing top 10 rows
 
 df: org.apache.spark.sql.DataFrame = [ip: string, datetime: timestamp ... 2 more fields]
+```
 
-2)  Review JSON formatted transform
+#### (2) Review JSON formatted transform
 
 From file:
-
+```
 {"ip":"10.128.2.1","datetime":"2017-11-30T16:00:48.000Z","url":"GET /js/vendor/jquery-1.12.0.min.js HTTP/1.1","status":200}
 {"ip":"10.128.2.1","datetime":"2017-11-30T12:10:01.000Z","url":"POST /action.php HTTP/1.1","status":302}
 {"ip":"10.131.2.1","datetime":"2017-12-02T16:44:40.000Z","url":"GET /bootstrap-3.3.7/js/bootstrap.min.js HTTP/1.1","status":200}
@@ -332,7 +342,7 @@ From file:
 {"ip":"10.131.0.1","datetime":"2017-11-30T12:16:49.000Z","url":"GET /login.php HTTP/1.1","status":200}
 {"ip":"10.129.2.1","datetime":"2017-11-30T12:14:07.000Z","url":"GET / HTTP/1.1","status":302}
 {"ip":"10.130.2.1","datetime":"2017-11-30T15:27:17.000Z","url":"GET /contest.php HTTP/1.1","status":200}
-
+```
 
 
 
