@@ -105,7 +105,7 @@ val jdbcDF = spark.read
 
 If SSL is enabled on the source database, substitute either of the above read statements for those shown in the Scala Notebooks, below.
 
-## Mount an S3 bucket in Databricks
+## (I) Mount an S3 bucket in Databricks
 
 #### (1) Create an AWS S3 API User
 
@@ -187,7 +187,7 @@ Results:
   
 _The mount will remain in-scope for the lifetime of the workspace (until deleted)._
 
-## Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
+## (II) Extract Existing PostgreSQL Data and Transform to Parquet/JSON/CSV Formatted Data
 
 #### (1) Load Data
 
@@ -287,7 +287,7 @@ repartition() is also an option that provides similar results. repartition() is 
 
 In general, one can determine the number of partitions by multiplying the number of CPUs in the cluster by 2, 3, or 4. When writing the data out to a file system, one can also choose a partition size that will create reasonable sized files (e.g. ~100MB). 
 
-## Read Parquet Formatted data files from the mounted S3 bucket, transform data to JSON formatted file, then write JSON formatted file back to the mounted S3 bucket
+## (III) Read Parquet Formatted data files from the mounted S3 bucket, transform data to JSON formatted file, then write JSON formatted file back to the mounted S3 bucket
 
 #### (1) Use Spark to read the Parquet source source file from the mounted S3 bucket, then write the JSON formatted transform back to the mounted S3 bucket
 
@@ -344,7 +344,7 @@ From file:
 {"ip":"10.130.2.1","datetime":"2017-11-30T15:27:17.000Z","url":"GET /contest.php HTTP/1.1","status":200}
 ```
 
-## Extract Existing Snowflake Data and Migrate Directly to Aerospike
+## (IV) Extract Existing Snowflake Data and Migrate Directly to Aerospike
 
 The example that follows will migrate existing Snowflake data (Snowflake TPC-H sample data, 'customer' table) directly to an Areospike database using Apache Spark. The Snowflake data will be read into a Spark DataFrame, the key column of the _implied_ schema of the key column will be transformed, then the entire DataFrame will be written directly to Aerospike.  Both the Apache Spark and Aerospike clusters will be provisiond with Ansible scripts found found [here](https://github.com/aerospike-examples/aerospike-ansible). A provisioning tutorial using these scripts can be found [here](https://dev.to/aerospike/using-aerospike-connect-for-spark-3poi).
 
