@@ -344,5 +344,340 @@ From file:
 {"ip":"10.130.2.1","datetime":"2017-11-30T15:27:17.000Z","url":"GET /contest.php HTTP/1.1","status":200}
 ```
 
+## Extract Existing Snowflake Data and Migrate Directly to Aerospike
+
+The example that follows will migrate existing Snowflake data (Snowflake TPC-H sample data) directly to an Areospike database using Apache Spark. The Snowflake data will be read into a Spark DataFrame, the key column of the _implied_ schema of the key column will be transformed, then the entire DataFrame will be written directly to Aerospike.  Both the Apache Spark and Aerospike clusters will be provisiond with Ansible scripts found found [here](https://github.com/aerospike-examples/aerospike-ansible). A provisioning tutorial using these scripts can be found [here](https://dev.to/aerospike/using-aerospike-connect-for-spark-3poi).
+
+#### Enable Aerospike Enterprise
+
+Modify ~/aerospike-ansible/vars/cluster-config.yml:
+```yaml
+# Whether to use enterprise
+# Set to false by default so will run without features.conf
+enterprise: true
+feature_key: ~/aerospike-ansible/assets/features.conf
+```
+
+#### To ssh/scp from a machine that is not the ansible project root:
+
+- copy `aerospike.aws.pem` from `~/aerospike-ansible` to machine
+- on machine terminal: `chmod 400 aerospike.aws.pem`
+- get public ip from `~/aerospike-ansible/scripts/cluster-ip-address-list.sh`
+
+From mac terminal:
+
+#> scp -i aerospike.aws.pem ./trips_100k.csv.gz ec2-user@34.216.225.50:/data
+#> trips_100k.csv.gz
+
+Spark Shell:
+[ec2-user@ip-10-0-0-222 ~]$ /spark/bin/spark-shell --master spark://10.0.0.222:7077 
+
+scala> import com.aerospike.spark.sql._
+scala> import org.apache.spark.SparkConf
+scala> import java.util.Date
+scala> import java.text.SimpleDateFormat
+scala> val sqlContext = spark.sqlContext
+
+scala> sqlContext.udf.register("getYearFromSeconds", (seconds: Long) => (new SimpleDateFormat("yyyy")).format(1000 * seconds))
+
+scala> val taxiDF = sqlContext.read.format("aerospike").option("aerospike.seedhost", "10.0.0.51:3000").option("aerospike.namespace", "test").option("aerospike.set", "nyc-taxi-data").load
+
+scala> taxiDF.createOrReplaceTempView("taxi")
+
+>>> 
+Queries from example work ok as presented
+<<<<
+
+```scala
+scala> taxiDF.printSchema
+root
+ |-- __key: string (nullable = true)
+ |-- __digest: binary (nullable = true)
+ |-- __expiry: integer (nullable = false)
+ |-- __generation: integer (nullable = false)
+ |-- __ttl: integer (nullable = false)
+ |-- snow_depth: double (nullable = true)
+ |-- rain: double (nullable = true)
+ |-- pkup_longitude: double (nullable = true)
+ |-- pkup_ntaname: string (nullable = true)
+ |-- extra: double (nullable = true)
+ |-- pkup_ctlabel: string (nullable = true)
+ |-- trip_distance: double (nullable = true)
+ |-- drop_ctlabel: string (nullable = true)
+ |-- pkup_puma: string (nullable = true)
+ |-- drop_ntacode: string (nullable = true)
+ |-- wind: double (nullable = true)
+ |-- pkup_borocode: long (nullable = true)
+ |-- drop_cdelig: string (nullable = true)
+ |-- mta_tax: double (nullable = true)
+ |-- snowfall: double (nullable = true)
+ |-- pkup_ntacode: string (nullable = true)
+ |-- pkup_cdelig: string (nullable = true)
+ |-- total_amount: double (nullable = true)
+ |-- store_fwd_flag: string (nullable = true)
+ |-- passenger_cnt: long (nullable = true)
+ |-- drop_datetime: long (nullable = true)
+ |-- vendor_id: string (nullable = true)
+ |-- payment_type: string (nullable = true)
+ |-- pkup_datetime: long (nullable = true)
+ |-- fare_amount: double (nullable = true)
+ |-- min_temp: long (nullable = true)
+ |-- drop_ct2010: string (nullable = true)
+ |-- drop_puma: string (nullable = true)
+ |-- drop_boroname: string (nullable = true)
+ |-- max_temp: long (nullable = true)
+ |-- drop_longitude: double (nullable = true)
+ |-- pkup_ct2010: string (nullable = true)
+ |-- tolls_amount: double (nullable = true)
+ |-- tip_amount: double (nullable = true)
+ |-- drop_broct2010: string (nullable = true)
+ |-- drop_2010_gid: long (nullable = true)
+ |-- trip_type: long (nullable = true)
+ |-- drop_latitude: double (nullable = true)
+ |-- drop_borocode: long (nullable = true)
+ |-- rate_code_id: long (nullable = true)
+ |-- cab_type: string (nullable = true)
+ |-- pkup_2010_gid: long (nullable = true)
+ |-- pkup_broct2010: string (nullable = true)
+ |-- pkup_latitude: double (nullable = true)
+ |-- id: long (nullable = true)
+ |-- pkup_boroname: string (nullable = true)
+ |-- drop_ntaname: string (nullable = true)
+```
+
+
+
+simpleDF.write
+.format("aerospike") //aerospike specific format
+.option("aerospike.writeset", "spark-test-write") //write to this set
+.option("aerospike.updateByKey", "one") //indicates which columns should be used for construction of primary key
+.option("aerospike.write.mode","update")
+.save()
+
+simpleDF.write.format("aerospike").format("aerospike").option("aerospike.writeset", "spark-test-write").option("aerospike.updateByKey","id").option("aerospike.write.mode","update").save()
+
+
+
+
+
+SNOWFLAKE
+
+### Must whitelist public ip’s of Spark Cluster in Snowflake security
+https://app.snowflake.com/us-xxxx-y/abc12345/account/security
+
+Start spark shell and load drivers:
+
+
+[ec2-user@ip-10-0-0-222 ~]$ /spark/bin/spark-shell --master spark://10.0.0.222:7077 --packages net.snowflake:snowflake-jdbc:3.12.17,net.snowflake:spark-snowflake_2.12:2.8.4-spark_3.0
+
+```scala
+val sfoptions = Map(
+  "sfUrl" -> "abc12345.snowflakecomputing.com",
+  "sfUser" -> "username",
+  "sfPassword" -> "password",
+  "sfDatabase" -> "snowflake_sample_data",
+  "sfSchema" -> "tpch_sf1",
+  "sfWarehouse" -> "COMPUTE_WH"
+)
+```
+Or (abbreviated data)
+```scala
+val sfoptions = Map(
+  "sfUrl" -> "abc12345.snowflakecomputing.com",
+  "sfUser" -> "username",
+  "sfPassword" -> "password",
+  "sfDatabase" -> "test",
+  "sfSchema" -> "tpch",
+  "sfWarehouse" -> "COMPUTE_WH"
+)
+
+val sfoptions = Map( 
+  "sfUrl" -> "abc12345.snowflakecomputing.com",
+  "sfUser" -> "username",
+  "sfPassword" -> "password",
+  "sfDatabase" -> "snowflake_sample_data",
+  "sfSchema" -> "tpch_sf1",
+  "sfWarehouse" -> "COMPUTE_WH")
+
+val df = spark.read
+  .format("snowflake")
+  .options(sfoptions)
+  .option("dbtable", "customer")
+  .load()
+```
+
+Or (abbreviated data)
+
+val df = spark.read
+  .format("snowflake")
+  .options(sfoptions)
+  .option("dbtable", "cust_1k")
+  .load()
+
+
+
+
+// specify schema
+val df = spark.read
+  .format("snowflake")
+  .options(sfoptions)
+  .option("dbtable", "customer")
+  //.schema(schema)
+  .load()
+
+```scala
+val df = spark.read.format("snowflake").options(sfoptions).option("dbtable", "customer").load()
+df.printSchema
+df.show(10)
+```
+Output:
+```scala
+(1) Spark Jobs
+Job 1 View(Stages: 1/1)
+Stage 1: 1/1   
+df:org.apache.spark.sql.DataFrame
+C_CUSTKEY:decimal(38,0)
+C_NAME:string
+C_ADDRESS:string
+C_NATIONKEY:decimal(38,0)
+C_PHONE:string
+C_ACCTBAL:decimal(12,2)
+C_MKTSEGMENT:string
+C_COMMENT:string
+root
+ |-- C_CUSTKEY: decimal(38,0) (nullable = false)
+ |-- C_NAME: string (nullable = false)
+ |-- C_ADDRESS: string (nullable = false)
+ |-- C_NATIONKEY: decimal(38,0) (nullable = false)
+ |-- C_PHONE: string (nullable = false)
+ |-- C_ACCTBAL: decimal(12,2) (nullable = false)
+ |-- C_MKTSEGMENT: string (nullable = true)
+ |-- C_COMMENT: string (nullable = true)
+
++---------+------------------+--------------------+-----------+---------------+---------+------------+--------------------+
+|C_CUSTKEY|            C_NAME|           C_ADDRESS|C_NATIONKEY|        C_PHONE|C_ACCTBAL|C_MKTSEGMENT|           C_COMMENT|
++---------+------------------+--------------------+-----------+---------------+---------+------------+--------------------+
+|    60001|Customer#000060001|          9Ii4zQn9cX|         14|24-678-784-9652|  9957.56|   HOUSEHOLD|l theodolites boo...|
+|    60002|Customer#000060002|    ThGBMjDwKzkoOxhz|         15|25-782-500-8435|   742.46|    BUILDING| beans. fluffily ...|
+|    60003|Customer#000060003|Ed hbPtTXMTAsgGhC...|         16|26-859-847-7640|  2526.92|    BUILDING|fully pending dep...|
+|    60004|Customer#000060004|NivCT2RVaavl,yUnK...|         10|20-573-674-7999|  7975.22|  AUTOMOBILE| furiously above ...|
+|    60005|Customer#000060005|1F3KM3ccEXEtI, B2...|         12|22-741-208-1316|  2504.74|   MACHINERY|express instructi...|
+|    60006|Customer#000060006|      3isiXW651fa8p |         22|32-618-195-8029|  9051.40|   MACHINERY| carefully quickl...|
+|    60007|Customer#000060007|sp6KJmx,TiSWbMPvh...|         12|22-491-919-9470|  6017.17|   FURNITURE|bold packages. re...|
+|    60008|Customer#000060008|3VteHZYOfbgQioA96...|          2|12-693-562-7122|  5621.44|  AUTOMOBILE|nal courts. caref...|
+|    60009|Customer#000060009|S60sNpR6wnacPBLeO...|          9|19-578-776-2699|  9548.01|   FURNITURE|efully even depen...|
+|    60010|Customer#000060010|c4vEEaV1tdqLdw2oV...|         21|31-677-809-6961|  3497.91|   HOUSEHOLD|fter the quickly ...|
++---------+------------------+--------------------+-----------+---------------+---------+------------+--------------------+
+only showing top 10 rows
+
+sfoptions: scala.collection.immutable.Map[String,String] = Map(sfUrl -> abc12345.snowflakecomputing.com, sfSchema -> tpch_sf1, sfPassword -> password, sfUser -> username, sfWarehouse -> COMPUTE_WH, sfDatabase -> snowflake_sample_data)
+df: org.apache.spark.sql.DataFrame = [C_CUSTKEY: decimal(38,0), C_NAME: string ... 6 more fields]
+``` 
+
+Write to Aerospike
+
+ |-- C_CUSTKEY: decimal(38,0) (nullable = false)
+ |-- C_NAME: string (nullable = false)
+ |-- C_ADDRESS: string (nullable = false)
+ |-- C_NATIONKEY: decimal(38,0) (nullable = false)
+ |-- C_PHONE: string (nullable = false)
+ |-- C_ACCTBAL: decimal(12,2) (nullable = false)
+ |-- C_MKTSEGMENT: string (nullable = true)
+ |-- C_COMMENT: string (nullable = true)
+
+val schema = new StructType(Array(
+          StructField("key",LongType,nullable = false),
+          StructField("name",StringType,nullable = true),
+          StructField("address",StringType,nullable = true),
+          StructField("nationkey",DoubleType,nullable = true),
+         StructField("phone",LongType,nullable = true),
+         StructField("acctbal",DoubleType,nullable = true),
+         StructField("mktsegnkey",LongType,nullable = true),
+         StructField("comment",LongType,nullable = true),
+          ))
+
+import org.apache.spark.sql.{ SQLContext, SparkSession, SaveMode}
+
+df.write.mode(SaveMode.Overwrite).format("aerospike").option("aerospike.seedhost", "10.0.0.51:3000").option("aerospike.namespace", "test").option("aerospike.set", "spark-sf-test").option("aerospike.updateByKey", "C_NAME").save()
+
+
+Dataframe column type transformation:
+https://sparkbyexamples.com/spark/spark-change-dataframe-column-type/
+
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.StringType
+
+val df2 = df.withColumn("age",col("age").cast(StringType))
+    .withColumn("isGraduated",col("isGraduated").cast(BooleanType))
+    .withColumn("jobStartDate",col("jobStartDate").cast(DateType))
+df2.printSchema()
+
+Thursday Feb 18, 2022
+
+To activate virtual env: source venv/bin/activate
+
+  200  ansible-playbook aws-setup-plus-aerospike-install.yml
+  201  ansible-playbook aerospike-java-client-setup.yml
+  202  ansible-playbook spark-cluster-setup.yml
+  203  source ./scripts/cluster-ip-address-list.sh
+  204  source ./scripts/client-ip-address-list.sh
+  205  ls -al scripts
+  206  source ./scripts/spark-ip-address-list.sh
+  207  history
+  208  scp -i aerospike.aws.pem ./recipes/aerospike-spark-demo/nyc-taxi-data-aero-loader-config.json ec2-user@${AERO_CLIENT_IPS[0]}:~
+  209  ./scripts/client-quick-ssh.sh 
+  210  ls
+  211  ./scripts/spark-quick-ssh.sh 1
+  212  ./scripts/cluster-quick-ssh.sh 1
+
+AWS USD 68.69 at spawn, 80.30 EOD
+
+Spark Cluster:
+
+ok: [localhost] => {
+    "msg": "Spark master is ec2-35-163-115-13.us-west-2.compute.amazonaws.com. Spark master internal url is spark://10.0.0.69:7077."
+}
+
+There are 3 entries
+
+##########################################################
+
+spark IP addresses : Public : 35.163.115.13, Private : 10.0.0.69
+spark IP addresses : Public : 35.87.203.125, Private : 10.0.1.151
+spark IP addresses : Public : 44.234.59.69, Private : 10.0.2.233
+
+Aerospike Cluster:
+
+There are 3 entries
+
+##########################################################
+
+cluster IP addresses : Public : 54.201.206.62, Private : 10.0.0.116
+cluster IP addresses : Public : 18.236.80.80, Private : 10.0.1.229
+cluster IP addresses : Public : 35.88.40.120, Private : 10.0.2.80
+
+Aerospike Client:
+
+There are 1 entries
+
+##########################################################
+
+client IP addresses : Public : 34.221.228.188, Private : 10.0.0.97
+
+
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.StringType
+
+val df2 = df.withColumn("key",col("key").cast(StringType))
+df2.printSchema()
+
+df2.write.mode(SaveMode.Overwrite).format("aerospike").option("aerospike.seedhost", "10.0.0.116:3000").option("aerospike.namespace", "test").option("aerospike.set", "sf-tpch").option("aerospike.updateByKey", "key").save()
+
+inputDF.write.mode(SaveMode.Overwrite) 
+.format("aerospike") //aerospike specific format
+.option("aerospike.writeset", "scala_input_data") //write to this set
+.option("aerospike.updateByKey", "id") //indicates which columns should be used for construction of primary key
+.option("aerospike.sendKey", "true")
+.save()
 
 
