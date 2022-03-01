@@ -518,7 +518,10 @@ val df = spark.read
 // Write to Aerospike
 val df2 = df.withColumn("C_CUSTKEY",col("C_CUSTKEY").cast(StringType))
 
-df2.write.mode(SaveMode.Overwrite).format("aerospike").option("aerospike.seedhost", "10.0.0.123:3000").option("aerospike.namespace", "test").option("aerospike.set", "sf-tpch").option("aerospike.updateByKey", "C_CUSTKEY").save()
+df2.write.mode(SaveMode.Overwrite).format("aerospike")
+   .option("aerospike.seedhost", "10.0.0.123:3000")
+   .option("aerospike.namespace", "test")
+   .option("aerospike.set", "sf-tpch").option("aerospike.updateByKey", "C_CUSTKEY").save()
 ```
 
 Confirm data in Aerospike...
