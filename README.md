@@ -569,10 +569,7 @@ root
 |    60010|Customer#000060010|c4vEEaV1tdqLdw2oV...|         21|31-677-809-6961|  3497.91|   HOUSEHOLD|fter the quickly ...|
 +---------+------------------+--------------------+-----------+---------------+---------+------------+--------------------+
 only showing top 10 rows
-
-sfoptions: scala.collection.immutable.Map[String,String] = Map(sfUrl -> abc12345.snowflakecomputing.com, sfSchema -> tpch_sf1, sfPassword -> password, sfUser -> username, sfWarehouse -> COMPUTE_WH, sfDatabase -> snowflake_sample_data)
-df: org.apache.spark.sql.DataFrame = [C_CUSTKEY: decimal(38,0), C_NAME: string ... 6 more fields]
-``` 
+```
 
 Write to Aerospike
 
@@ -612,25 +609,7 @@ val df2 = df.withColumn("age",col("age").cast(StringType))
     .withColumn("jobStartDate",col("jobStartDate").cast(DateType))
 df2.printSchema()
 
-Thursday Feb 18, 2022
 
-To activate virtual env: source venv/bin/activate
-
-  200  ansible-playbook aws-setup-plus-aerospike-install.yml
-  201  ansible-playbook aerospike-java-client-setup.yml
-  202  ansible-playbook spark-cluster-setup.yml
-  203  source ./scripts/cluster-ip-address-list.sh
-  204  source ./scripts/client-ip-address-list.sh
-  205  ls -al scripts
-  206  source ./scripts/spark-ip-address-list.sh
-  207  history
-  208  scp -i aerospike.aws.pem ./recipes/aerospike-spark-demo/nyc-taxi-data-aero-loader-config.json ec2-user@${AERO_CLIENT_IPS[0]}:~
-  209  ./scripts/client-quick-ssh.sh 
-  210  ls
-  211  ./scripts/spark-quick-ssh.sh 1
-  212  ./scripts/cluster-quick-ssh.sh 1
-
-AWS USD 68.69 at spawn, 80.30 EOD
 
 Spark Cluster:
 
@@ -664,7 +643,7 @@ There are 1 entries
 
 client IP addresses : Public : 34.221.228.188, Private : 10.0.0.97
 
-
+```scala
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.StringType
 
@@ -679,5 +658,5 @@ inputDF.write.mode(SaveMode.Overwrite)
 .option("aerospike.updateByKey", "id") //indicates which columns should be used for construction of primary key
 .option("aerospike.sendKey", "true")
 .save()
-
+```
 
