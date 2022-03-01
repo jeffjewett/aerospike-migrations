@@ -522,10 +522,13 @@ val df2 = df.withColumn("C_CUSTKEY",col("C_CUSTKEY").cast(StringType))
 
 // Write to Aerospike's default  'test' namespace. Create set 'sf-tpch'
 // seedhost 10.0.0.123 can be any Aerspike node in its cluster
-df2.write.mode(SaveMode.Overwrite).format("aerospike")
+df2.write
+   .mode(SaveMode.Overwrite)
+   .format("aerospike")
    .option("aerospike.seedhost", "10.0.0.123:3000")
    .option("aerospike.namespace", "test")
-   .option("aerospike.set", "sf-tpch").option("aerospike.updateByKey", "C_CUSTKEY").save()
+   .option("aerospike.set", "sf-tpch").option("aerospike.updateByKey", "C_CUSTKEY")
+   .save()
 ```
 
 Confirm data in Aerospike...
