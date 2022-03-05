@@ -26,13 +26,13 @@ val dfall = spark.read
     .cast("array<long>").as("AUDIENCE_ARR_T"))
     .drop("AUDIENCE_ARRAY")
 
-val simpleSchema = StructType(List(
-    StructField("person_id",StringType, false),
-    StructField("audience_array", ArrayType(StringType), true)))
-
 //
 // ==> alternatively:
 //
+
+val simpleSchema = StructType(List(
+    StructField("person_id",StringType, false),
+    StructField("audience_array", ArrayType(StringType), true)))
 
 val dfall = spark.read
   .format("snowflake")
@@ -51,7 +51,20 @@ dfall.write
   .format("aerospike")
   .option("aerospike.seedhost", "10.0.1.7:3000")
   .option("aerospike.namespace", "test")
-  .option("aerospike.set", "choozle-demo")
+  .option("aerospike.set", "choozle-demo-int-key")
   .option("aerospike.updateByKey", "PERSON_ID")
   .option("aerospike.sendKey", "true")
   .save()
+
+//
+// Read back from Aerospike
+//
+val thingsDF = spark.read
+  .format("aerospike")
+  .option("aerospike.seedhost", "10.0.1.7")
+  .option("aerospike.port", "3000")
+  .option("aerospike.namespace", "test")
+  .option("aerospike.set", "choozle-demo-int-key")
+  .load()
+
+
