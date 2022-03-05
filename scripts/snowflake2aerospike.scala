@@ -1,4 +1,5 @@
 mport org.apache.spark.sql.{ SQLContext, SparkSession, SaveMode}
+import org.apache.spark.sql.types._
 import com.aerospike.spark.sql._
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.StringType
@@ -24,6 +25,26 @@ val dfall = spark.read
     .select(col("PERSON_ID"), split(regexp_replace(col("AUDIENCE_ARRAY"),"[\\[\\]]",""),",")
     .cast("array<long>").as("AUDIENCE_ARR_T"))
     .drop("AUDIENCE_ARRAY")
+
+val simpleSchema = StructType(List(
+    StructField("person_id",StringType, false),
+    StructField("audience_array", ArrayType(StringType), true)))
+
+//
+// ==> alternatively:
+//
+
+val dfall = spark.read
+  .format("snowflake")
+  .options(sfoptions)
+  .option("dbtable", "PEOPLE_PROFILES")
+  .schema(simpleSchema),
+  .load()
+
+val dfall_int = df2.withColumn("audience_array",col("audience_array").cast(ArrayType(IntegerType)))
+//
+// <==
+//
 
 dfall.write
   .mode(SaveMode.Overwrite)
