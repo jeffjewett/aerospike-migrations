@@ -1,4 +1,4 @@
-# Databricks and Apache Spark as an Independent and Uniform Data Migration Platform
+# Migrate Data to Aerospike using Databricks and Apache Spark as Independent and Uniform Data Migration Platforms
 
 The following examples illustrate how Databricks and Spark can be deployed to migrate and/or transform data between formats, independent sources, and/or independent targets. 
 
@@ -346,7 +346,7 @@ From file:
 
 ## (IV) Extract Existing Snowflake Data and Migrate Directly to Aerospike
 
-The example that follows will migrate existing Snowflake data (Snowflake TPC-H sample data, 'customer' table) directly to an Areospike database using Apache Spark. The Snowflake data will be read into a Spark DataFrame, the key column of the _implied_ schema of the key column will be transformed, then the entire DataFrame will be written directly to Aerospike.  Both the Apache Spark and Aerospike clusters will be provisiond with Ansible scripts found found [here](https://github.com/aerospike-examples/aerospike-ansible). A provisioning tutorial using these scripts can be found [here](https://dev.to/aerospike/using-aerospike-connect-for-spark-3poi).
+The example that follows will migrate existing Snowflake data (Snowflake TPC-H sample data, 'customer' table) directly to an Areospike database using Apache Spark. The Snowflake data will be read into a Spark DataFrame, the key column of the _implied_ schema of the key column will be transformed, then the entire DataFrame will be written directly to Aerospike.  Both the Apache Spark and Aerospike clusters will be provisiond with Ansible scripts found [here](https://github.com/aerospike-examples/aerospike-ansible). A provisioning tutorial using these scripts can be found [here](https://dev.to/aerospike/using-aerospike-connect-for-spark-3poi).
 
 #### (1) Enable Aerospike Enterprise
 
